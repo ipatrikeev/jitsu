@@ -3,8 +3,11 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jitsucom/jitsu/server/logging"
+	"github.com/jitsucom/jitsu/server/system"
+	"github.com/spf13/viper"
 	"html/template"
 	"io/ioutil"
+	"net/http"
 	"strings"
 )
 
@@ -18,18 +21,26 @@ const (
 
 var blankPage = []byte(`<html><head></head><body></body></html>`)
 
-//WelcomePageHandler serves HTML Welcome page
-type WelcomePageHandler struct {
+//RootPathHandler serves:
+// HTTP redirect to Configurator
+// HTML Welcome page or blanc page
+type RootPathHandler struct {
+	service         *system.Service
 	configuratorURL string
 	welcome         *template.Template
+	redirectToHttps bool
 }
 
-//NewWelcomePageHandler reads sourceDir and returns WelcomePageHandler instance
-func NewWelcomePageHandler(sourceDir, configuratorURL string, disableWelcomePage bool) (ph *WelcomePageHandler) {
-	ph = &WelcomePageHandler{configuratorURL: configuratorURL}
+//NewRootPathHandler reads sourceDir and returns RootPathHandler instance
+func NewRootPathHandler(service *system.Service, sourceDir, configuratorURL string, disableWelcomePage, redirectToHttps bool) *RootPathHandler {
+	rph := &RootPathHandler{service: service, configuratorURL: configuratorURL, redirectToHttps: redirectToHttps}
+
+	if service.IsConfigured() {
+		return rph
+	}
 
 	if disableWelcomePage {
-		return
+		return rph
 	}
 
 	if !strings.HasSuffix(sourceDir, "/") {
@@ -38,7 +49,7 @@ func NewWelcomePageHandler(sourceDir, configuratorURL string, disableWelcomePage
 	payload, err := ioutil.ReadFile(sourceDir + welcomePageName)
 	if err != nil {
 		logging.Errorf("Error reading %s file: %v", sourceDir+welcomePageName, err)
-		return
+		return rph
 	}
 
 	welcomeHTMLTmpl, err := template.New("html template").
@@ -46,15 +57,32 @@ func NewWelcomePageHandler(sourceDir, configuratorURL string, disableWelcomePage
 		Parse(string(payload))
 	if err != nil {
 		logging.Error("Error parsing html template from", welcomePageName, err)
+		return rph
+	}
+
+	rph.welcome = welcomeHTMLTmpl
+
+	return rph
+}
+
+//Handler handles requests and returns welcome page or redirect to Configurator URL
+func (ph *RootPathHandler) Handler(c *gin.Context) {
+	if ph.service.ShouldBeRedirected() {
+		redirectSchema := c.GetHeader("X-Forwarded-Proto")
+		redirectHost := c.GetHeader("X-Forwarded-Host")
+		redirectPort := c.GetHeader("X-Forwarded-Port")
+		if ph.redirectToHttps {
+			redirectSchema = "https"
+		}
+
+		redirectURL := redirectSchema + "://" + redirectHost
+		if redirectPort != "" {
+			redirectURL += ":" + redirectPort
+		}
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL+viper.GetString("server.configurator_url"))
 		return
 	}
 
-	ph.welcome = welcomeHTMLTmpl
-
-	return
-}
-
-func (ph *WelcomePageHandler) Handler(c *gin.Context) {
 	c.Header("Content-type", htmlContentType)
 
 	if ph.welcome == nil {

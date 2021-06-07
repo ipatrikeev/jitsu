@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jitsucom/jitsu/server/events"
+	"github.com/jitsucom/jitsu/server/system"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -205,10 +206,12 @@ func TestCors(t *testing.T) {
 
 			metaStorage := &meta.Dummy{}
 
+			systemService := system.NewService("")
+
 			dummyRecognitionService, _ := users.NewRecognitionService(metaStorage, nil, nil, "")
 			router := routers.SetupRouter("", metaStorage, destinationService, sources.NewTestService(), synchronization.NewTestTaskService(),
 				dummyRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}),
-				caching.NewEventsCache(metaStorage, 100))
+				caching.NewEventsCache(metaStorage, 100), systemService)
 
 			freezeTime := time.Date(2020, 06, 16, 23, 0, 0, 0, time.UTC)
 			patch := monkey.Patch(time.Now, func() time.Time { return freezeTime })
@@ -360,10 +363,12 @@ func TestAPIEvent(t *testing.T) {
 
 			metaStorage := &meta.Dummy{}
 
+			systemService := system.NewService("")
+
 			dummyRecognitionService, _ := users.NewRecognitionService(metaStorage, nil, nil, "")
 			router := routers.SetupRouter("", metaStorage, destinationService, sources.NewTestService(), synchronization.NewTestTaskService(),
 				dummyRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}),
-				caching.NewEventsCache(metaStorage, 100))
+				caching.NewEventsCache(metaStorage, 100), systemService)
 
 			freezeTime := time.Date(2020, 06, 16, 23, 0, 0, 0, time.UTC)
 			patch := monkey.Patch(time.Now, func() time.Time { return freezeTime })
@@ -542,10 +547,12 @@ func testPostgresStoreEvents(t *testing.T, pgDestinationConfigTemplate string, e
 	require.NoError(t, err)
 	defer destinationService.Close()
 
+	systemService := system.NewService("")
+
 	dummyRecognitionService, _ := users.NewRecognitionService(metaStorage, nil, nil, "")
 	router := routers.SetupRouter("", metaStorage, destinationService, sources.NewTestService(), synchronization.NewTestTaskService(),
 		dummyRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}),
-		caching.NewEventsCache(metaStorage, 100))
+		caching.NewEventsCache(metaStorage, 100), systemService)
 
 	server := &http.Server{
 		Addr:              httpAuthority,
@@ -655,10 +662,12 @@ func testClickhouseStoreEvents(t *testing.T, configTemplate string, sendEventsCo
 	require.NoError(t, err)
 	appconfig.Instance.ScheduleClosing(destinationService)
 
+	systemService := system.NewService("")
+
 	dummyRecognitionService, _ := users.NewRecognitionService(metaStorage, nil, nil, "")
 	router := routers.SetupRouter("", metaStorage, destinationService, sources.NewTestService(), synchronization.NewTestTaskService(),
 		dummyRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}),
-		caching.NewEventsCache(metaStorage, 100))
+		caching.NewEventsCache(metaStorage, 100), systemService)
 
 	server := &http.Server{
 		Addr:              httpAuthority,

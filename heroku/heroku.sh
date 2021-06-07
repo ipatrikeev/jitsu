@@ -1,5 +1,33 @@
 #!/bin/bash
 
+### Parameters
+# Jitsu port
+NGINX_PORT_VALUE=$PORT
+if [[ -z "$NGINX_PORT_VALUE" ]]; then
+  NGINX_PORT_VALUE=8000
+fi
+
+# Jitsu Server admin token
+if [[ -z "$SERVER_ADMIN_TOKEN" ]]; then
+  export SERVER_ADMIN_TOKEN=$(date +%s|sha256sum|base64|head -c 32)
+fi
+
+# Jitsu Configurator admin token
+if [[ -z "$CONFIGURATOR_ADMIN_TOKEN" ]]; then
+  export CONFIGURATOR_ADMIN_TOKEN=$(date +%s|sha256sum|base64|head -c 32)
+fi
+
+# Jitsu UI authorization access secret
+if [[ -z "$UI_AUTH_ACCESS_SECRET" ]]; then
+  export UI_AUTH_ACCESS_SECRET=$(date +%s|sha256sum|base64|head -c 32)
+fi
+
+# Jitsu UI authorization refresh secret
+if [[ -z "$UI_AUTH_REFRESH_SECRET" ]]; then
+  export UI_AUTH_REFRESH_SECRET=$(date +%s|sha256sum|base64|head -c 32)
+fi
+
+### Start services
 # Start Jitsu Configurator process
 nohup /home/configurator/app/configurator -cfg=/home/configurator/data/config/configurator.yaml -cr=true -dhid=heroku &
 status=$?
@@ -21,7 +49,6 @@ fi
 sleep 1
 
 # Start Nginx process
-NGINX_PORT_VALUE=$PORT
 sed "s/NGINX_PORT/$NGINX_PORT_VALUE/g" /etc/nginx/nginx.conf > /etc/nginx/nginx_replaced.conf && \
 mv /etc/nginx/nginx_replaced.conf /etc/nginx/nginx.conf && \
 nohup nginx -g 'daemon off;' &

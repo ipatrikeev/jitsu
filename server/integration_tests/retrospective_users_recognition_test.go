@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jitsucom/jitsu/server/system"
 	"net/http"
 	"testing"
 	"time"
@@ -129,8 +130,10 @@ func TestRetrospectiveUsersRecognition(t *testing.T) {
 	require.NoError(t, err)
 	appconfig.Instance.ScheduleClosing(usersRecognitionService)
 
+	systemService := system.NewService("")
+
 	router := routers.SetupRouter("", metaStorage, destinationService, sources.NewTestService(), synchronization.NewTestTaskService(),
-		usersRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}), eventsCache)
+		usersRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}), eventsCache, systemService)
 
 	server := &http.Server{
 		Addr:              httpAuthority,

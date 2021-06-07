@@ -43,6 +43,6 @@ RUN mv /home/configurator/app/web /home/configurator/web &&\
 USER $EVENTNATIVE_USER
 
 VOLUME ["/home/$EVENTNATIVE_USER/data", "/home/configurator/data"]
-EXPOSE 80 8001 7000
+EXPOSE 8000 8001 7000
 
 CMD sh /home/eventnative/heroku.sh

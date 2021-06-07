@@ -1,6 +1,4 @@
 server:
-  log:
-    level: info
   allowed_domains:
     - '{{APP_TLD}}'
     - 'localhost'

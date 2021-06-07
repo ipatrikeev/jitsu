@@ -19,6 +19,7 @@ import (
 	"github.com/jitsucom/jitsu/server/sources"
 	"github.com/jitsucom/jitsu/server/storages"
 	"github.com/jitsucom/jitsu/server/synchronization"
+	"github.com/jitsucom/jitsu/server/system"
 	"github.com/jitsucom/jitsu/server/telemetry"
 	"github.com/jitsucom/jitsu/server/test"
 	"github.com/jitsucom/jitsu/server/users"
@@ -103,8 +104,10 @@ func TestStreamInsert(t *testing.T) {
 	require.NoError(t, err)
 	appconfig.Instance.ScheduleClosing(usersRecognitionService)
 
+	systemService := system.NewService("")
+
 	router := routers.SetupRouter("", metaStorage, destinationService, sources.NewTestService(), synchronization.NewTestTaskService(),
-		usersRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}), eventsCache)
+		usersRecognitionService, fallback.NewTestService(), coordination.NewInMemoryService([]string{}), eventsCache, systemService)
 
 	server := &http.Server{
 		Addr:              httpAuthority,

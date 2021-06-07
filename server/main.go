@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"github.com/jitsucom/jitsu/server/system"
 	"math/rand"
 	"net/http"
 	"os"
@@ -321,8 +322,10 @@ func main() {
 		appconfig.Instance.ScheduleClosing(vn)
 	}
 
+	systemService := system.NewService(viper.GetString("system"))
+
 	router := routers.SetupRouter(adminToken, metaStorage, destinationsService, sourceService, taskService, usersRecognitionService, fallbackService,
-		coordinationService, eventsCache)
+		coordinationService, eventsCache, systemService)
 
 	telemetry.ServerStart(*dockerHubID)
 	notifications.ServerStart()
